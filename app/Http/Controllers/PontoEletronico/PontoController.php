@@ -98,6 +98,13 @@ class PontoController extends Controller
             return redirect('/dashboard')->withErrors(['ponto' => $resultado]);
         }
 
-        return redirect('/dashboard')->with('sucesso', $this->etapas[$area] . ' registrada.');
+        $mensagensSucesso = [
+            'entrada' => 'Entrada registrada.',
+            'inicio_intervalo' => 'Intervalo iniciado.',
+            'retorno_intervalo' => 'Retorno do intervalo registrado.',
+            'saida' => 'Saída registrada.',
+        ];
+
+        return redirect('/dashboard')->with('sucesso', $mensagensSucesso[$area]);
     }
 }

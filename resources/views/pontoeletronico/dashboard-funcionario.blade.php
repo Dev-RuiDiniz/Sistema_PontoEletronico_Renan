@@ -1,7 +1,7 @@
 @extends('pontoeletronico.layout')
 
 @section('title', 'Minha jornada')
-@section('body-class', 'workspace-page')
+@section('body-class', 'workspace-page employee-page')
 @section('nav')
     <a class="nav-current" href="{{ url('/dashboard') }}">Minha jornada</a>
     <a href="#historico">Histórico mensal</a>
@@ -23,7 +23,7 @@
     <div class="dashboard-grid">
         <section class="panel journey-panel">
             <div class="panel-heading"><div><div class="eyebrow">REGISTROS DE HOJE</div><h2>Sua jornada</h2></div>
-                @if ($proximaEtapa)
+                @if ($pontoHoje && $pontoHoje->entrada && $proximaEtapa)
                     <span class="status-pill status-progress"><i></i> Em andamento</span>
                 @elseif ($pontoHoje && $pontoHoje->saida)
                     <span class="status-pill status-complete"><i></i> Concluída</span>

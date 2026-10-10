@@ -1,4 +1,4 @@
-# PRD — Sistema de Ponto Eletrônico
+# PRD — Ponto Conceito
 
 **Estado:** telas e fluxos principais implementados no repositório. A restrição por IP está disponível, mas começa desligada. A aplicação ainda precisa ser validada com os responsáveis antes de qualquer uso real.
 
@@ -11,7 +11,7 @@ Permitir que uma equipe registre quatro horários por jornada e consulte esses r
 | Perfil | Permissões |
 | --- | --- |
 | Funcionário | Registrar a própria jornada na sequência aprovada e consultar o próprio histórico mensal. |
-| Administrador | Acompanhar as jornadas de todos, filtrar por mês e funcionário, cadastrar funcionários e configurar a restrição de IP. |
+| Administrador | Acompanhar as jornadas de todos, navegar pela lista de funcionários em páginas de 10, consultar os pontos de cada pessoa, emitir o espelho mensal da equipe e configurar a restrição de IP. |
 
 O login é único. Após validar uma conta ativa, o servidor direciona cada perfil à sua área. Rotas administrativas verificam o perfil no servidor; esconder um link na interface não é tratado como autorização.
 
@@ -21,7 +21,10 @@ O login é único. Após validar uma conta ativa, o servidor direciona cada perf
 2. **`/login` — Acesso:** CPF e senha para funcionários e administradores. O perfil da conta define o destino.
 3. **`/cadastro` — Funcionários:** formulário administrativo para criar conta ativa com nome, CPF, e-mail, cargo, local e senha inicial.
 4. **`/dashboard` — Jornada pessoal:** próxima marcação, quatro horários do dia e histórico mensal do funcionário autenticado.
-5. **`/admin` — Acompanhamento:** jornadas de todos os funcionários, filtro mensal e individual, lista de contas e configuração do IP.
+5. **`/admin` — Acompanhamento:** jornadas de todos os funcionários, filtro mensal e individual, lista paginada de contas e configuração do IP.
+
+   - **`/admin/funcionarios/{id}/pontos` — Pontos do funcionário:** histórico mensal individual, acessível pela lista administrativa.
+   - **`/admin/espelho` — Espelho mensal:** registros da equipe na competência selecionada, opção de imprimir/salvar em PDF com campos de assinatura e exportar CSV.
 
 Os endereços antigos sob `/painel` redirecionam para as áreas novas; as telas antigas de ajustes e relatórios não fazem parte deste fluxo.
 
@@ -33,6 +36,9 @@ Os endereços antigos sob `/painel` redirecionam para as áreas novas; as telas 
 - A hora vem do servidor; o formulário não envia uma hora para ser confiada.
 - O fuso horário configurado é `America/Sao_Paulo`.
 - O histórico do funcionário é limitado à própria conta. A administração pode consultar a equipe inteira ou filtrar um funcionário.
+- A lista administrativa exibe 10 funcionários por página; cada funcionário tem acesso ao seu histórico mensal individual para a administração.
+- O espelho mensal reúne todos os funcionários e as marcações gravadas no período. Datas sem registro não são classificadas como falta ou folga, e o documento não calcula horas trabalhadas.
+- A administração pode imprimir/salvar o espelho mensal em PDF para conferência e assinatura de cada funcionário e do responsável, ou exportar CSV.
 - Registros antigos com entrada e saída continuam visíveis. O sistema não inventa horários de intervalo para dados históricos.
 - A versão atual não atende jornadas que cruzam a meia-noite; cada data local é tratada como uma jornada separada.
 - Correções de ponto e recuperação de senha não estão disponíveis nesta versão.
@@ -69,6 +75,8 @@ A tabela `configuracao_sistema` guarda um único IP autorizado e o estado da res
 - O registro exige a ordem de quatro etapas, usa data/hora do servidor e mostra confirmação ou erro compreensível.
 - A tela do funcionário consulta somente os próprios registros do mês escolhido.
 - O painel administrativo consulta os registros de todos e permite filtrar por mês ou funcionário.
+- A lista de funcionários pagina 10 pessoas por vez e permite abrir o histórico mensal de cada uma.
+- O administrador consegue ver o espelho mensal consolidado da equipe, imprimir/salvar em PDF para assinatura e exportar CSV, sem inferir faltas ou calcular horas.
 - Cadastro cria uma conta ativa, única por CPF/e-mail, com senha armazenada em hash.
 - Com a restrição de IP desligada, o registro segue disponível segundo as demais regras.
 - Com a restrição ligada, só o IP público configurado consegue gravar as quatro etapas; login e histórico continuam acessíveis de fora.
@@ -84,4 +92,4 @@ A tabela `configuracao_sistema` guarda um único IP autorizado e o estado da res
 
 ## 10. Fora do escopo atual
 
-Solicitação e aprovação de ajustes, anexos, exportações, escalas complexas, cálculo de banco de horas, múltiplos IPs/unidades, biometria, geolocalização, aplicativo móvel e integração com folha.
+Solicitação e aprovação de ajustes, anexos, escalas complexas, cálculo de banco de horas, múltiplos IPs/unidades, biometria, geolocalização, aplicativo móvel e integração com folha.

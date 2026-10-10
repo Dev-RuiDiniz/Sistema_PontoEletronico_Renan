@@ -1,7 +1,7 @@
 @extends('pontoeletronico.layout')
 
 @section('title', 'Acompanhamento da equipe')
-@section('body-class', 'workspace-page')
+@section('body-class', 'workspace-page admin-page')
 @section('nav')
     <a class="nav-current" href="{{ url('/admin') }}">Acompanhamento</a>
     <a href="#funcionarios">Funcionários</a>
@@ -14,7 +14,10 @@
 <section class="page-container workspace-container">
     <div class="page-heading">
         <div><div class="eyebrow"><span class="eyebrow-dot"></span> VISÃO ADMINISTRATIVA</div><h1>A equipe, <span>em um só lugar.</span></h1><p>Acompanhe as jornadas registradas e encontre os dados de cada funcionário.</p></div>
-        <a class="button button-primary" href="{{ url('/cadastro') }}">+ Novo funcionário</a>
+        <div class="admin-heading-actions">
+            <a class="button button-dark" href="{{ route('admin.espelho', ['mes' => $mesSelecionado]) }}">Espelho mensal da equipe</a>
+            <a class="button button-primary" href="{{ url('/cadastro') }}">+ Novo funcionário</a>
+        </div>
     </div>
 
     <div class="admin-stats">
@@ -27,7 +30,7 @@
         <div class="panel-heading admin-panel-heading"><div><div class="eyebrow">PONTO DA EQUIPE</div><h2>Acompanhamento completo</h2></div>
             <form method="get" action="{{ url('/admin') }}" class="admin-filters">
                 <label for="mes">Mês</label><input id="mes" type="month" name="mes" value="{{ $mesSelecionado }}">
-                <label for="funcionario">Funcionário</label><select id="funcionario" name="funcionario"><option value="">Todos</option>@foreach ($funcionarios as $funcionario)<option value="{{ $funcionario->id }}" {{ (string) $funcionarioSelecionado === (string) $funcionario->id ? 'selected' : '' }}>{{ $funcionario->nome }}</option>@endforeach</select>
+                <label for="funcionario">Funcionário</label><select id="funcionario" name="funcionario"><option value="">Todos</option>@foreach ($todosFuncionarios as $funcionarioFiltro)<option value="{{ $funcionarioFiltro->id }}" {{ (string) $funcionarioSelecionado === (string) $funcionarioFiltro->id ? 'selected' : '' }}>{{ $funcionarioFiltro->nome }}</option>@endforeach</select>
                 <button class="button button-dark button-small" type="submit">Filtrar</button>
             </form>
         </div>
@@ -66,13 +69,35 @@
     </section>
 
     <section class="panel staff-panel" id="funcionarios">
-        <div class="panel-heading"><div><div class="eyebrow">ACESSOS DA EQUIPE</div><h2>Funcionários cadastrados</h2></div><a class="text-link" href="{{ url('/cadastro') }}">Cadastrar funcionário <span aria-hidden="true">↗</span></a></div>
-        <div class="staff-grid">
-            @forelse ($funcionarios as $funcionario)
-                <article class="staff-card"><span class="employee-avatar">{{ strtoupper(substr($funcionario->nome, 0, 1)) }}</span><div><b>{{ $funcionario->nome }}</b><small>{{ $funcionario->cargo ?: 'Funcionário' }}{{ $funcionario->local ? ' · ' . $funcionario->local : '' }}</small></div><span class="staff-status {{ $funcionario->ativo == 1 ? 'staff-active' : 'staff-inactive' }}">{{ $funcionario->ativo == 1 ? 'Ativo' : 'Inativo' }}</span></article>
-            @empty
-                <p class="empty-state">Nenhum funcionário cadastrado.</p>
-            @endforelse
+        <div class="panel-heading"><div><div class="eyebrow">ACESSOS DA EQUIPE</div><h2>Funcionários cadastrados <span class="staff-total">({{ $funcionarios->total() }})</span></h2></div><a class="text-link" href="{{ url('/cadastro') }}">Cadastrar funcionário <span aria-hidden="true">↗</span></a></div>
+        <div class="table-wrap">
+            <table class="data-table staff-table">
+                <thead><tr><th>Funcionário</th><th>Cargo e unidade</th><th>Acesso</th><th><span class="sr-only">Ação</span></th></tr></thead>
+                <tbody>
+                    @forelse ($funcionarios as $funcionario)
+                        <tr>
+                            <td><div class="employee-cell"><span class="employee-avatar">{{ strtoupper(substr($funcionario->nome, 0, 1)) }}</span><span><b>{{ $funcionario->nome }}</b></span></div></td>
+                            <td>{{ $funcionario->cargo ?: 'Funcionário' }}{{ $funcionario->local ? ' · ' . $funcionario->local : '' }}</td>
+                            <td><span class="staff-status {{ $funcionario->ativo == 1 ? 'staff-active' : 'staff-inactive' }}">{{ $funcionario->ativo == 1 ? 'Ativo' : 'Inativo' }}</span></td>
+                            <td class="staff-action-cell"><a class="button button-outline button-small" href="{{ route('admin.funcionario.pontos', ['id' => $funcionario->id, 'mes' => $mesSelecionado]) }}">Ver pontos</a></td>
+                        </tr>
+                    @empty
+                        <tr><td class="empty-state" colspan="4">Nenhum funcionário cadastrado.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="staff-pagination">
+            @if ($funcionarios->total())
+                <span>Exibindo {{ $funcionarios->firstItem() }}–{{ $funcionarios->lastItem() }} de {{ $funcionarios->total() }} funcionários</span>
+            @else
+                <span>Nenhum funcionário para exibir.</span>
+            @endif
+            <div class="pagination-actions" aria-label="Paginação de funcionários">
+                @if ($funcionarios->onFirstPage())<span class="pagination-disabled">Anterior</span>@else<a href="{{ $funcionarios->previousPageUrl() }}">Anterior</a>@endif
+                <span class="pagination-page">Página {{ $funcionarios->currentPage() }} de {{ $funcionarios->lastPage() }}</span>
+                @if ($funcionarios->hasMorePages())<a href="{{ $funcionarios->nextPageUrl() }}">Próxima</a>@else<span class="pagination-disabled">Próxima</span>@endif
+            </div>
         </div>
     </section>
 </section>

@@ -1,4 +1,4 @@
-# Fluxograma do Sistema de Ponto
+# Fluxograma do Ponto Conceito
 
 As cinco telas principais formam dois caminhos: o funcionário registra e consulta a própria jornada; o administrador acompanha a equipe, cria funcionários e configura a rede autorizada.
 
@@ -34,6 +34,11 @@ flowchart TD
     ADMIN --> ADMIN_ACAO{O que fazer?}
     ADMIN_ACAO -->|Acompanhar| FILTRO[Filtrar por mês ou funcionário]
     FILTRO --> LISTA[Ver todas as marcações e status]
+    ADMIN_ACAO -->|Consultar funcionário| FUNCIONARIOS[Lista paginada · 10 por página]
+    FUNCIONARIOS --> PONTOS_FUNCIONARIO[ /admin/funcionarios/id/pontos · histórico individual]
+    ADMIN_ACAO -->|Conferir mês da equipe| ESPELHO[ /admin/espelho · registros mensais consolidados]
+    ESPELHO --> EXPORTA_CSV[Exportar CSV para planilha]
+    ESPELHO --> IMPRIME[Imprimir ou salvar PDF · assinaturas]
     ADMIN_ACAO -->|Cadastrar| CADASTRO[ /cadastro · criar funcionário ativo ]
     CADASTRO --> ADMIN
     ADMIN_ACAO -->|Configurar rede| IP_CONFIG[Informar IP público fixo e ativar/desativar restrição]
@@ -50,4 +55,5 @@ flowchart TD
 - O IP é o endereço público da rede da empresa, não o IP local do roteador.
 - O sistema não confia em cabeçalhos de IP encaminhados por padrão. Hospedagem com proxy reverso exige configuração explícita de proxies confiáveis.
 - A jornada é agrupada pela data local e não cobre corretamente uma jornada que atravesse a meia-noite.
-- Correção de marcação, anexos, justificativas e exportações não fazem parte do fluxo atual.
+- O espelho mensal apresenta as marcações armazenadas; datas sem registro não são automaticamente classificadas como falta ou folga e as horas trabalhadas não são calculadas.
+- O espelho pode ser exportado em CSV ou impresso/salvo em PDF para conferência e assinatura.

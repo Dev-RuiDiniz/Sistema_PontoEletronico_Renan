@@ -1,6 +1,6 @@
-# Sistema de Ponto Eletrônico
+# Ponto Conceito
 
-Aplicação web para registro simples da jornada de trabalho. O sistema tem cinco endereços principais: página inicial, login, cadastro de funcionários, painel do funcionário e painel administrativo.
+Aplicação web do Café Conceito para registro simples da jornada de trabalho. O produto se chama **Ponto Conceito** e tem cinco endereços principais: página inicial, login, cadastro de funcionários, painel do funcionário e painel administrativo.
 
 ## O que já está implementado
 
@@ -8,7 +8,8 @@ Aplicação web para registro simples da jornada de trabalho. O sistema tem cinc
 - `/login`: entrada única com CPF e senha. O perfil da conta leva o usuário ao painel correspondente.
 - `/cadastro`: cadastro de funcionários, disponível somente para administradores.
 - `/dashboard`: registro de entrada, início do intervalo, retorno e saída, sempre na ordem, mais histórico mensal pessoal.
-- `/admin`: acompanhamento mensal de todos os funcionários, filtro por funcionário, lista de acessos e configuração opcional do IP público autorizado.
+- `/admin`: acompanhamento mensal, lista de funcionários com 10 pessoas por página, acesso ao histórico individual, configuração opcional do IP público e espelho mensal consolidado.
+- `/admin/espelho`: conferência do mês para toda a equipe, impressão/salvamento em PDF com campos de assinatura e exportação CSV.
 - Horários definidos pelo servidor no fuso `America/Sao_Paulo`.
 - Senhas novas armazenadas com hash bcrypt; senhas SHA-1 antigas são atualizadas para bcrypt após um login válido.
 
@@ -43,12 +44,13 @@ Para o desenvolvimento sem Docker, instale as dependências com `composer instal
 2. O painel mostra a próxima marcação disponível.
 3. O sistema valida a ordem e registra a hora do servidor: entrada → intervalo → retorno → saída.
 4. O histórico mensal mostra somente os registros da própria conta.
-5. O administrador consulta os registros da equipe, cadastra funcionários e, se necessário, restringe novas marcações ao IP público fixo cadastrado.
+5. O administrador consulta os registros da equipe, abre o histórico de cada funcionário, emite o espelho mensal para conferência e assinatura, cadastra funcionários e, se necessário, restringe novas marcações ao IP público fixo cadastrado.
 
 Quando a restrição por IP está ligada, uma marcação de fora do endereço autorizado é recusada. Login e consulta do histórico continuam acessíveis. O IP identifica a conexão pública da empresa, não a identidade física da pessoa.
 
 ## Documentação
 
+- [DESIGN.md](DESIGN.md): identidade visual, moodboard e regras de interface do Ponto Conceito.
 - [PRD.md](PRD.md): regras, escopo, segurança e pendências do produto.
 - [AGENTS.md](AGENTS.md): instruções de execução e contribuição.
 - [ROADMAP.md](ROADMAP.md): concluído e próximos passos.

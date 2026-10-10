@@ -24,6 +24,16 @@ Route::group(['namespace' => 'PontoEletronico'], function () {
     Route::get('/admin', 'AcompanhamentoController@admin')
         ->middleware('adminMiddleware')
         ->name('admin');
+    Route::get('/admin/espelho', 'AcompanhamentoController@espelho')
+        ->middleware('adminMiddleware')
+        ->name('admin.espelho');
+    Route::get('/admin/espelho/exportar', 'AcompanhamentoController@exportarEspelho')
+        ->middleware('adminMiddleware')
+        ->name('admin.espelho.exportar');
+    Route::get('/admin/funcionarios/{id}/pontos', 'AcompanhamentoController@pontosFuncionario')
+        ->where('id', '[0-9]+')
+        ->middleware('adminMiddleware')
+        ->name('admin.funcionario.pontos');
     Route::post('/admin/restricao-ip', 'AcompanhamentoController@salvarRestricaoIp')
         ->middleware('adminMiddleware')
         ->name('admin.restricao-ip');

@@ -7,6 +7,7 @@
 - Preserve o fluxo de quatro marcações, o histórico pessoal, o acompanhamento administrativo e a opção de IP descritos no PRD.
 - Não reative justificativas, anexos, aprovações ou exportações legadas sem pedido explícito e revisão de segurança.
 - Mantenha o `README.md` alinhado ao código e atualize `FLUXOGRAMA.md` quando o fluxo mudar.
+- Siga `DESIGN.md` para o nome, a marca e os padrões visuais do Ponto Conceito; mantenha o logo original do Café Conceito sem alterações.
 - Regras ainda pendentes no PRD não são decisões aprovadas.
 
 ## Idioma e alterações
@@ -60,6 +61,7 @@ Abra `http://127.0.0.1:8001`. O `.env` é local e não deve ser commitado. O ban
 - `database/migrations/`: esquema, inclusive horários do intervalo e configuração do IP.
 - `resources/views/pontoeletronico/`: páginas Blade.
 - `public/css/ponto.css`: estilos das telas atuais.
+- `DESIGN.md` e `docs/identidade/`: regras e moodboard da identidade visual.
 
 ## Git e entrega
 
