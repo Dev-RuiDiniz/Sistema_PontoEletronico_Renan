@@ -1,70 +1,75 @@
 <?php namespace App\Http\Controllers\PontoEletronico;
 
-
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-
-use Request;
-use Session;
 use App\Usuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 
-class LoginController extends PontoEletronicoController {
-    
-    
-    public function __construct()
+class LoginController extends Controller
+{
+    public function show()
     {
-        $this->middleware('authMiddleware', ['except' => ['login']]);
-        
+        if (Session::has('login.ponto.usuario_id')) {
+            return Session::get('login.ponto.admin') == 1
+                ? redirect('/admin')
+                : redirect('/dashboard');
+        }
+
+        return view('pontoeletronico.login');
     }
-    
-    
-    public function login(){
-     
-        $cpf = Request::input('cpf');
-        $senha = Request::input('senha');
-        
-        $cpf = str_replace(".", "", $cpf);
-        $cpf = str_replace("-", "", $cpf);
-        
-        if(empty($cpf) OR empty($senha)):
-            return redirect(getenv('APP_URL'));
-        endif;
-        
-        $senha = hash('sha1', $senha);
 
-        $login = Usuario::where(['cpf' => $cpf, 'senha' => $senha, 'admin' => 0])->first();
-        
-                
-        if(isset($login->id)):
+    public function login(Request $request)
+    {
+        $dados = $request->validate([
+            'cpf' => 'required|string|max:20',
+            'senha' => 'required|string',
+        ], [
+            'cpf.required' => 'Informe seu CPF.',
+            'cpf.string' => 'Informe um CPF válido.',
+            'cpf.max' => 'O CPF informado é inválido.',
+            'senha.required' => 'Informe sua senha.',
+            'senha.string' => 'A senha informada é inválida.',
+        ]);
 
-            Session::put('login.ponto.usuario_id', $login->id);
-            Session::put('login.ponto.admin', $login->admin);
-            Session::put('login.ponto.usuario_nome', $login->nome);
-            
-            return redirect(getenv('APP_URL').'/dashboard');
-            
-        else:
+        $cpf = preg_replace('/\D+/', '', $dados['cpf']);
+        $usuario = Usuario::where('cpf', $cpf)->where('ativo', 1)->first();
 
-            $erro = "Dados inválidos, tente novamente!";
-            Session::put('status.msg', $erro);
+        if (!$usuario || !$this->senhaValida($usuario, $dados['senha'])) {
+            return back()->withErrors(['login' => 'CPF ou senha inválidos.'])->withInput($request->only('cpf'));
+        }
 
-            return redirect(getenv('APP_URL'));
-            
-        endif;
-        
-            
+        $request->session()->regenerate();
+        Session::put('login.ponto.usuario_id', $usuario->id);
+        Session::put('login.ponto.admin', (int) $usuario->admin);
+        Session::put('login.ponto.usuario_nome', $usuario->nome);
+
+        return $usuario->admin == 1 ? redirect('/admin') : redirect('/dashboard');
     }
-    
-    
-    public function sair(){
-        
-        Session::forget('login.ponto.usuario_id');
-        Session::forget('login.ponto.admin');
-        Session::forget('login.ponto.usuario_nome');
-                      
-        return redirect(getenv('APP_URL'));
-            
-    } 
-    
+
+    private function senhaValida(Usuario $usuario, $senha)
+    {
+        $armazenada = (string) $usuario->senha;
+
+        if (preg_match('/^\$2[aby]\$/', $armazenada)) {
+            return Hash::check($senha, $armazenada);
+        }
+
+        // Migra automaticamente a senha SHA-1 do protótipo após um login válido.
+        if (preg_match('/^[a-f0-9]{40}$/i', $armazenada) && hash_equals($armazenada, sha1($senha))) {
+            $usuario->senha = Hash::make($senha);
+            $usuario->save();
+            return true;
+        }
+
+        return false;
+    }
+
+    public function sair(Request $request)
+    {
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
 }

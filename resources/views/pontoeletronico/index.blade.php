@@ -1,116 +1,69 @@
-<?php $url_base = getenv('APP_URL'); ?>
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>{{ getenv('APP_NAME') }} | Ponto Eletrônico</title>
-  <!-- Tell the browser to be responsive to screen width -->
-  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-  <!-- Bootstrap 3.3.6 -->
-  <link rel="stylesheet" href="{{ $url_base }}/adminlte/bower_components/bootstrap/dist/css/bootstrap.min.css">
-  <!-- Font Awesome -->
-  <script src="https://kit.fontawesome.com/d3cb21102b.js" crossorigin="anonymous"></script>
-  <!-- Ionicons -->
-  <link rel="stylesheet" href="{{ $url_base }}/adminlte/bower_components/Ionicons/css/ionicons.min.css">
-  <!-- Theme style -->
-  <link rel="stylesheet" href="{{ $url_base }}/adminlte/dist/css/AdminLTE.min.css">
-  <!-- iCheck -->
-  <link rel="stylesheet" href="{{ $url_base }}/adminlte/bower_components/iCheck/square/blue.css">
-  
-  <link href="{{ $url_base }}/adminlte/plugins/sweet-alert/sweet-alert.css" rel="stylesheet">
+@extends('pontoeletronico.layout')
 
-  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-  <!--[if lt IE 9]>
-  <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-  <![endif]-->
-</head>
-<body class="hold-transition login-page">
-    
-<div class="login-box">
-  <div class="login-logo">
-      <a href="#"><img src="{{ getenv('APP_URL') }}/img/ilab4_logo_pontoeletronico.png" width="350px;"></a>
-      
-      <h2><?=Date('d/m/Y')?> <?=Date('H:i')?></h2>
-  </div>
-    
-  <!-- /.login-logo -->
-  <div class="login-box-body">
-    <p class="login-box-msg">Identifique-se e registre seu ponto</p>
-    
-    <form action="{{ getenv('APP_URL') }}/login" method="post">
-      {{ csrf_field() }}
-      <div class="form-group has-feedback">
-        <input type="text" name="cpf" class="form-control cpf" placeholder="CPF" maxlength="14"  required>
-        <span class="fa fa-user form-control-feedback"></span>
-      </div>
-      <div class="form-group has-feedback">
-          <input type="password" name="senha" class="form-control" placeholder="Senha" maxlength="20" required>
-        <span class="fa fa-lock form-control-feedback"></span>
-      </div>
-      <div class="row">
-        <!-- /.col -->
-        <div class="col-md-4">
-          <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+@section('title', 'Ponto eletrônico para equipes')
+@section('body-class', 'landing-page')
+
+@section('nav')
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#para-equipes">Para equipes</a>
+    <a class="button button-small button-dark" href="{{ url('/login') }}">Acessar sistema <span aria-hidden="true">↗</span></a>
+@endsection
+
+@section('content')
+<section class="hero-section page-container">
+    <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> ROTINA MAIS CLARA, TODOS OS DIAS</div>
+        <h1>O ponto da equipe.<br><span>Sem complicação.</span></h1>
+        <p>Registre cada etapa da jornada e acompanhe o mês em um só lugar. Simples para quem trabalha, claro para quem cuida da equipe.</p>
+        <div class="hero-actions">
+            <a class="button button-primary" href="{{ url('/login') }}">Entrar no sistema <span aria-hidden="true">↗</span></a>
+            <a class="text-link" href="#como-funciona">Conhecer o fluxo <span aria-hidden="true">↓</span></a>
         </div>
-        <!-- /.col -->
-      </div>
-    </form>
+        <div class="hero-note"><span class="note-check">✓</span> Acesso individual para cada funcionário</div>
+    </div>
 
-  </div>
-  <!-- /.login-box-body -->
-  
-  <input type="hidden" id="url_base" value="{{ $url_base }}">
-</div>
-<!-- /.login-box -->
+    <div class="hero-visual" aria-label="Prévia ilustrativa de uma jornada de trabalho">
+        <div class="visual-orbit orbit-one"></div>
+        <div class="visual-orbit orbit-two"></div>
+        <div class="clock-card">
+            <div class="clock-card-top"><span>JORNADA DE HOJE</span><span class="live-pill"><i></i> AO VIVO</span></div>
+            <div class="clock-time">{{ now()->format('H:i') }}<span>:{{ now()->format('s') }}</span></div>
+            <div class="clock-date">HOJE · {{ now()->format('d/m/Y') }}</div>
+            <div class="mini-progress"><span></span></div>
+            <div class="clock-steps">
+                <div class="clock-step step-done"><span class="step-icon">✓</span><span><b>Entrada</b><small>08:02</small></span></div>
+                <div class="clock-step step-next"><span class="step-icon">02</span><span><b>Intervalo</b><small>Próxima etapa</small></span></div>
+                <div class="clock-step"><span class="step-icon">03</span><span><b>Retorno</b><small>Aguardando</small></span></div>
+                <div class="clock-step"><span class="step-icon">04</span><span><b>Saída</b><small>Aguardando</small></span></div>
+            </div>
+            <div class="clock-card-foot"><span class="foot-avatar">R</span><span>Uma jornada organizada começa com um registro.</span></div>
+        </div>
+        <div class="floating-tag tag-one"><span>✓</span> Registro salvo</div>
+        <div class="floating-tag tag-two"><span class="tag-dot"></span> Tudo em ordem</div>
+        <div class="visual-caption">PRÉVIA ILUSTRATIVA DA JORNADA</div>
+    </div>
+</section>
 
-<!-- jQuery 2.2.3 -->
-<script src="{{ $url_base }}/adminlte/bower_components/jquery/dist/jquery.min.js"></script>
-<!-- Bootstrap 3.3.6 -->
-<script src="{{ $url_base }}/adminlte/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-<!-- iCheck -->
-<script src="{{ $url_base }}/adminlte/bower_components/iCheck/icheck.min.js"></script>
+<section class="steps-section" id="como-funciona">
+    <div class="page-container">
+        <div class="section-heading">
+            <div><div class="eyebrow">DO PRIMEIRO AO ÚLTIMO REGISTRO</div><h2>Quatro momentos.<br><span>Uma jornada completa.</span></h2></div>
+            <p>O sistema mostra qual é o próximo passo. Você registra, confere e segue o dia.</p>
+        </div>
+        <div class="step-cards">
+            <article class="step-card"><span class="card-number">01</span><div class="step-symbol">↗</div><h3>Entrada</h3><p>Comece a jornada registrando seu início de expediente.</p></article>
+            <article class="step-card"><span class="card-number">02</span><div class="step-symbol">Ⅱ</div><h3>Intervalo</h3><p>Marque o momento em que você inicia sua pausa.</p></article>
+            <article class="step-card"><span class="card-number">03</span><div class="step-symbol">▶</div><h3>Retorno</h3><p>Registre a volta do intervalo e continue sua jornada.</p></article>
+            <article class="step-card"><span class="card-number">04</span><div class="step-symbol">↙</div><h3>Saída</h3><p>Finalize o dia com o horário de encerramento.</p></article>
+        </div>
+    </div>
+</section>
 
-<script src="{{ $url_base }}/adminlte/plugins/sweet-alert/sweet-alert.min.js"></script>
-
-<!-- InputMask -->
-<script src="{{ $url_base }}/adminlte/bower_components/inputmask/jquery.mask.min.js"></script>
-
-<script>
-  $(function () {
-    $('input').iCheck({
-      checkboxClass: 'icheckbox_square-blue',
-      radioClass: 'iradio_square-blue',
-      increaseArea: '20%' // optional
-    });
-  });
-</script>
-<script>
-        $(document).ready(function(){
-                $('.datemask').mask('00/00/0000');
-                $('.telefone').mask('(00)00000-0000');
-                $('.cpf').mask('000.000.000-00');
-                $('.time').mask('00:00');
-        });
-</script>
-<?php
-if (Session::has('status.msg')){
-
-    $error_msg = Session::get("status.msg");
-    Session::forget('status.msg');
-    
-    if (isset($error_msg) AND $error_msg != ""):
-        echo("<script>swal(\"$error_msg\");</script>");
-    endif;
-}    
-?>   
-
-<?php 
-if(isset($error_redirect) AND $error_redirect != ""):
-    header("location: $error_redirect");
-endif;
-?>
-</body>
-</html>
+<section class="team-section" id="para-equipes">
+    <div class="page-container team-panel">
+        <div><div class="eyebrow eyebrow-light">FEITO PARA O DIA A DIA</div><h2>Menos dúvida.<br>Mais visibilidade.</h2><p>Funcionários acompanham o próprio histórico mensal. A administração consulta os registros da equipe e cadastra novos funcionários.</p></div>
+        <div class="team-side"><div class="team-stat"><strong>01</strong><span>acesso individual</span></div><div class="team-stat"><strong>04</strong><span>marcações por jornada</span></div><a class="button button-light" href="{{ url('/login') }}">Acessar o sistema <span aria-hidden="true">↗</span></a></div>
+        <div class="team-decoration">P</div>
+    </div>
+</section>
+@endsection

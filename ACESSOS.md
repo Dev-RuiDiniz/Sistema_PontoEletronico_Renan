@@ -1,36 +1,41 @@
-# Acessos e senhas
+# Acessos e credenciais
 
-Este arquivo é um inventário, **não um cofre de senhas**. Nenhuma credencial real foi fornecida junto com os arquivos analisados; por isso não há usuário, senha ou endereço de produção preenchido aqui.
+Este arquivo é um inventário, não um cofre. Não registre senhas, tokens, chaves, CPF real ou o conteúdo de `.env` no Git.
 
-## Regra para credenciais
+## Ambientes
 
-- Guarde senhas, tokens, chaves e credenciais de produção em um gerenciador de segredos aprovado pela equipe.
-- Não cole segredos neste arquivo, no Git, em tickets, prints, logs ou mensagens.
-- Registre aqui apenas o nome do sistema, o responsável e a localização segura do segredo (por exemplo, o nome do item no cofre), nunca o valor.
-- Para desenvolvimento, use contas fictícias e banco local descartável.
-- Se um segredo real já tiver sido colocado no repositório ou compartilhado por engano, trate-o como exposto e troque-o.
-
-## Inventário a preencher pela equipe
-
-| Sistema | Ambiente/URL | Responsável | Onde obter o acesso |
+| Sistema | Ambiente/URL | Responsável | Como obter acesso |
 | --- | --- | --- | --- |
-| Aplicação | Desenvolvimento: `http://127.0.0.1:8000` | A definir | Conta local criada após preparar o ambiente |
-| Aplicação | Homologação: a definir | A definir | Cofre de segredos da equipe |
-| Aplicação | Produção: a definir | A definir | Cofre de segredos da equipe |
-| Banco MySQL | Local: configuração no `.env` local | Desenvolvedor | Credenciais locais; não compartilhar |
-| Banco MySQL | Homologação/produção: a definir | A definir | Cofre de segredos da equipe |
-| Hospedagem/servidor | A definir | A definir | Cofre de segredos da equipe |
-| E-mail/SMTP | A definir | A definir | Cofre de segredos da equipe |
-| IP público permitido para registro | Um IP fixo do Wi-Fi da empresa (confirmado; endereço ainda pendente) | Responsável de TI/operadora | Cadastro administrativo da aplicação |
+| Aplicação | Desenvolvimento Docker: `http://127.0.0.1:8001` | Desenvolvedor | Criar o primeiro administrador pelo comando abaixo |
+| Aplicação | Homologação | A definir | Cofre de segredos da equipe; URL a definir |
+| Aplicação | Produção | A definir | Cofre de segredos da equipe; URL a definir |
+| Banco de dados | Desenvolvimento Docker | Desenvolvedor | Serviço `db` do Compose; banco local descartável |
+| Hospedagem e domínio | A definir | A definir | Cofre de segredos da equipe |
+| IP público autorizado | Wi-Fi da empresa; endereço numérico pendente | Responsável de TI/operadora | Confirmar com a operadora e cadastrar em `/admin` |
 
-## Atenção sobre dados de demonstração
+## Primeiro administrador local
 
-O arquivo de migration que inseria contas de exemplo com dados pessoais e senha em formato SHA-1 foi neutralizado antes da publicação inicial do repositório. Bancos que já tenham passado pela versão antiga ainda podem conter essas contas: remova-as ou troque suas senhas. A criação segura do primeiro administrador ainda precisa ser implementada; consulte o `ROADMAP.md`.
+Depois de iniciar o Docker e aplicar as migrations, execute:
 
-## Pendências
+```powershell
+docker compose exec web php artisan ponto:administrador
+```
 
-- [ ] Definir responsável pelo cofre e quem pode conceder/revogar acessos.
-- [ ] Informar URLs de homologação e produção sem incluir senhas.
-- [ ] Criar conta administrativa inicial por processo seguro e registrar apenas onde recuperá-la.
-- [ ] Definir rotina de rotação e revogação de credenciais.
-- [ ] Obter e configurar o endereço numérico do IP público fixo confirmado. Não registrar senha do Wi-Fi aqui.
+O comando solicita os dados no terminal, oculta a senha e cria uma conta ativa com perfil administrativo. Não existe senha padrão compartilhada. Para execução sem Docker, use `php artisan ponto:administrador` no diretório do projeto.
+
+## Regras para segredos
+
+- Use um gerenciador de senhas/segredos aprovado pela equipe para acessos de homologação e produção.
+- Registre neste documento somente responsáveis, nomes de itens no cofre e URLs públicas.
+- `.env` contém configuração local; não o envie nem o inclua em commits.
+- Se uma credencial real aparecer no Git ou em uma mensagem, considere-a exposta e troque-a.
+- Use somente dados fictícios no banco local.
+
+## Pendências de acesso
+
+- [ ] Definir quem administra o cofre e revoga acessos.
+- [ ] Informar as URLs de homologação e produção.
+- [ ] Criar e guardar a conta administrativa de cada ambiente usando processo seguro.
+- [ ] Confirmar o endereço numérico do IP público fixo e decidir se a trava ficará ativa.
+- [ ] Se houver proxy reverso no ambiente publicado, cadastrar seus endereços reais como proxies confiáveis antes de ativar a restrição por IP.
+- [ ] Definir processo de rotação de segredos e backup do banco.

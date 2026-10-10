@@ -1,137 +1,84 @@
 <?php namespace App\Http\Controllers\PontoEletronico;
 
-
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-
-use Request;
-use Session;
-use App\Usuario;
+use App\ConfiguracaoSistema;
 use App\Ponto;
-use App\PontoRazao;
+use App\Usuario;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
-class AcompanhamentoController extends PontoEletronicoController {
-    
-    public function __construct()
+class AcompanhamentoController extends Controller
+{
+    public function admin()
     {
-        $this->middleware('authPainelMiddleware');
-        
+        $mesSelecionado = request('mes', Carbon::now()->format('Y-m'));
+        if (!$this->mesValido($mesSelecionado)) {
+            $mesSelecionado = Carbon::now()->format('Y-m');
+        }
+
+        $inicio = $mesSelecionado . '-01';
+        $fim = Carbon::parse($inicio)->endOfMonth()->toDateString();
+        $funcionarioSelecionado = request('funcionario');
+        $funcionarios = Usuario::where('admin', 0)->orderBy('nome')->get();
+
+        $consulta = Ponto::with('usuario')->whereBetween('data', [$inicio, $fim]);
+        if (is_string($funcionarioSelecionado) && $funcionarioSelecionado !== '' && ctype_digit($funcionarioSelecionado)) {
+            $consulta->where('usuario_id', (int) $funcionarioSelecionado);
+        } else {
+            $funcionarioSelecionado = '';
+        }
+        $registros = $consulta->orderBy('data', 'desc')->orderBy('entrada', 'desc')->get();
+        $jornadasIncompletas = $registros->filter(function ($registro) {
+            return !empty($registro->entrada) && empty($registro->saida);
+        })->count();
+        $funcionariosAtivos = $funcionarios->filter(function ($funcionario) {
+            return $funcionario->ativo == 1;
+        })->count();
+        $configuracao = ConfiguracaoSistema::find(1);
+
+        return view('pontoeletronico.admin-geral', compact(
+            'mesSelecionado', 'funcionarioSelecionado', 'funcionarios', 'registros',
+            'jornadasIncompletas', 'funcionariosAtivos', 'configuracao'
+        ));
     }
-    
-    public function index(){
-        
-        $admin = Session::get('login.ponto.painel.admin');
-        $usuario_id = Session::get('login.ponto.painel.usuario_id');
-        
-        $data = array();
-        
-        if($_POST):
-            
-            $data_inicio = Request::input('data_inicio');
-            $data_inicio_arr = explode("/", $data_inicio);
-            $data_inicio_db = $data_inicio_arr[2].'-'.$data_inicio_arr[1].'-'.$data_inicio_arr[0];
-            
-            $data_fim = Request::input('data_fim');
-            $data_fim_arr = explode("/", $data_fim);
-            $data_fim_db = $data_fim_arr[2].'-'.$data_fim_arr[1].'-'.$data_fim_arr[0];
 
-            if($admin == 1):
-                
-                $usuario_selecionado = Request::input('usuario');
-                
-                if($usuario_selecionado == 'all'):
-                    $registros = Ponto::where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-                else:    
-                    $registros = Ponto::where(['usuario_id' => $usuario_selecionado])->where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-                endif;
-                
-                $usuario = array();
-                $usuarios = Usuario::orderBy('nome', 'ASC')->get();
-            else:
-                $registros = Ponto::where(['usuario_id' => $usuario_id])->where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-                $usuario = Usuario::find($usuario_id);
-                $usuarios = array();
-            endif;
-            
-        else:
-            
-            $data_inicio_db = Date('Y') . '-' . Date('m') . '-' . '01';
-            $data_fim_db = Date("Y-m-d");
-            
-            $data_inicio = '01/'. Date('m') . '/' . Date('Y');
-            $data_fim = Date("d/m/Y");
-            
-            if($admin == 1):
-                $registros = array();
-                $usuario = array();
-                $usuarios = Usuario::orderBy('nome', 'ASC')->get();
-            else:
-                $registros = Ponto::where(['usuario_id' => $usuario_id])->where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-                $usuario = Usuario::find($usuario_id);
-                $usuarios = array();
-            endif;
-            
-        endif;
-        
-        
-        foreach($registros as $registro):
-            
-            $data[$registro->usuario->nome][] = $registro;
-        
-        endforeach;
-        
-        
-//        die("<PRE>" . print_r($data,1));
-        
-        $justificativas = PontoRazao::where(['ativo' => 1])->orderBy("descricao", "ASC")->get();
-        
-        if($admin == 1):
-            return view('pontoeletronico/acompanhamento/index-admin')->with('usuario', $usuario)->with('registros', $registros)->with('usuarios', $usuarios)->with('data_inicio', $data_inicio)->with('data_fim', $data_fim)->with('justificativas', $justificativas)->with('data', $data);
-        else:    
-            return view('pontoeletronico/acompanhamento/index')->with('usuario', $usuario)->with('registros', $registros)->with('usuarios', $usuarios)->with('data_inicio', $data_inicio)->with('data_fim', $data_fim)->with('justificativas', $justificativas)->with('data', $data);
-        endif;
-        
-            
+    public function salvarRestricaoIp(Request $request)
+    {
+        $dados = $request->validate([
+            'restricao_ativa' => 'required|in:0,1',
+            'ip_autorizado' => 'nullable|ip',
+        ], [
+            'restricao_ativa.required' => 'Escolha se a restrição por IP ficará ativa.',
+            'restricao_ativa.in' => 'A opção de restrição por IP é inválida.',
+            'ip_autorizado.ip' => 'Informe um endereço IPv4 ou IPv6 válido.',
+        ]);
+
+        $ip = trim((string) ($dados['ip_autorizado'] ?? ''));
+        if ($dados['restricao_ativa'] === '1' && $ip === '') {
+            return back()->withErrors(['ip_autorizado' => 'Informe o IP público da empresa antes de ativar a restrição.']);
+        }
+        if ($ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return back()->withErrors(['ip_autorizado' => 'Informe um endereço IP público válido, não o IP local do roteador.']);
+        }
+
+        $configuracao = ConfiguracaoSistema::find(1);
+        if (!$configuracao) {
+            $configuracao = new ConfiguracaoSistema();
+            $configuracao->id = 1;
+        }
+        $configuracao->restricao_ip_ativa = $dados['restricao_ativa'] === '1';
+        $configuracao->ip_autorizado = $ip !== '' ? $ip : null;
+        $configuracao->save();
+
+        return redirect('/admin')->with('sucesso', 'Configuração de acesso por IP atualizada.');
     }
-    
-    public function index_download($usuario, $inicio, $fim){
-        
-        $usuario_admin = Session::get('login.ponto.painel.admin');
-        $usuario_id = Session::get('login.ponto.painel.usuario_id');
-        
-        if($usuario_admin != 1):
-            $msg = "Download não permitido.";
-            Session::put('status.msg', $msg);
-            return redirect(getenv('APP_URL').'/painel/acompanhamento');
-            die();
-        endif;
-        
-        
-        $data = array();
-        
-        $data_inicio_db = $inicio;
-        $data_inicio = $inicio;
-        $data_fim_db = $fim;
-        $data_fim = $fim;
 
-        
-        if($usuario == 'all'):
-            $registros = Ponto::where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-        else:  
-            
-            $usuario_selecionado = Usuario::where(['nome' => $usuario])->first();
-        
-            $registros = Ponto::where(['usuario_id' => $usuario_selecionado->id])->where('data', '>=', $data_inicio_db)->where('data', '<=', $data_fim_db)->with('usuario')->orderBy('data', 'ASC')->orderBy('entrada', 'ASC')->get();
-        endif;
+    private function mesValido($mes)
+    {
+        if (!is_string($mes) || !preg_match('/^(\d{4})-(\d{2})$/', $mes, $partes)) {
+            return false;
+        }
 
-        foreach($registros as $registro):
-            $data[$registro->usuario->nome][] = $registro;
-        endforeach;       
-
-        return view('pontoeletronico/acompanhamento/index-download')->with('data_inicio', $data_inicio)->with('data_fim', $data_fim)->with('data', $data);
-
-            
+        return checkdate((int) $partes[2], 1, (int) $partes[1]);
     }
-    
 }

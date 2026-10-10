@@ -2,64 +2,67 @@
 
 ## Fonte da verdade
 
-- Leia primeiro `PRD.md` e `ROADMAP.md` antes de alterar comportamento.
-- Mantenha o primeiro produto pequeno: quatro batidas, histórico pessoal, gestão de contas e restrição opcional por um IP.
-- Não reative justificativas, anexos, aprovações ou relatórios antigos sem pedido explícito e revisão de segurança.
-- O PRD separa comportamento encontrado de regras ainda pendentes. Não transforme hipótese em regra aprovada.
-- Mantenha `README.md` alinhado com o que realmente existe. Atualize o `FLUXOGRAMA.md` quando um fluxo mudar.
-- Se instruções globais do usuário ou do ambiente forem mais específicas, elas têm prioridade.
+- Leia `PRD.md` e `ROADMAP.md` antes de alterar regras ou fluxos.
+- O produto tem cinco páginas principais: `/`, `/login`, `/cadastro`, `/dashboard` e `/admin`.
+- Preserve o fluxo de quatro marcações, o histórico pessoal, o acompanhamento administrativo e a opção de IP descritos no PRD.
+- Não reative justificativas, anexos, aprovações ou exportações legadas sem pedido explícito e revisão de segurança.
+- Mantenha o `README.md` alinhado ao código e atualize `FLUXOGRAMA.md` quando o fluxo mudar.
+- Regras ainda pendentes no PRD não são decisões aprovadas.
 
-## Idioma e mudanças
+## Idioma e alterações
 
-- Escreva documentação, textos da interface e mensagens em português do Brasil.
-- Prefira mudanças pequenas ligadas ao pedido. Não refatore áreas próximas sem necessidade.
-- Não adicione funcionalidades ou dependências sem um requisito explícito.
-- Ao alterar dados, crie migration compatível com o histórico; não edite migration já aplicada em ambientes compartilhados.
-- Não apague dados nem execute migrations destrutivas em banco com dados reais.
+- Escreva documentação, interface e mensagens em português do Brasil.
+- Prefira alterações pequenas que atendam ao pedido; não refatore áreas sem relação.
+- Não adicione dependências sem necessidade aprovada.
+- Para mudanças no banco, crie migration aditiva e preserve os registros existentes.
+- Não apague dados nem execute migrations destrutivas em bancos com dados reais.
 
 ## Segurança e dados
 
-- Nunca coloque senhas, tokens, chaves, dados reais de funcionários ou conteúdo de `.env` em commits, logs, exemplos ou respostas.
-- Use valores fictícios e banco local descartável para desenvolvimento.
-- Não copie credenciais dos usuários de demonstração que aparecem em migrations. Remova esse mecanismo antes de implantação.
-- Mudanças em login, papéis, ajustes, upload e exportação precisam preservar autorização no servidor, não apenas esconder botões na tela.
-- A restrição de rede deve comparar o IP observado pelo servidor em todas as rotas de gravação de ponto. Nunca confie em IP enviado pelo formulário ou em cabeçalho `X-Forwarded-For` vindo de proxy não configurado como confiável.
-- Registre data e hora no servidor para as quatro marcações (entrada, início do intervalo, retorno, saída), conforme a regra aprovada.
-- A restrição por IP identifica a saída pública da rede e não substitui login individual nem comprova qual pessoa ou dispositivo está no local.
-- Registros de ponto e decisões de ajuste devem manter autoria e histórico; não sobrescreva evidências sem uma regra aprovada.
+- Nunca coloque senhas, tokens, chaves, dados reais ou conteúdo de `.env` no Git, em logs ou exemplos.
+- Use banco local descartável e dados fictícios durante o desenvolvimento.
+- Crie o primeiro administrador pelo comando interativo `php artisan ponto:administrador`; não coloque credenciais administrativas fixas no código.
+- Senhas novas devem usar `Hash::make`. Não introduza novos hashes SHA-1; a compatibilidade legada existe somente para rehash durante login válido.
+- Cheque perfil administrativo no servidor em todas as rotas de gestão. Cheque o status ativo durante autenticação e autorização.
+- As quatro marcações devem usar data/hora do servidor e validar a sequência no servidor.
+- A restrição compara `$request->ip()` com o IP público configurado. Não aceite IP do formulário nem confie em `X-Forwarded-For` sem configurar proxies reais e confiáveis.
+- Login e histórico não dependem do IP autorizado; a verificação de IP vale para cada registro de ponto.
+- Registros de ponto são evidências; não os sobrescreva sem uma regra aprovada.
 
-## Como executar localmente
+## Executar localmente
 
-Pré-requisitos: PHP compatível com `composer.json`, Composer e MySQL. Veja o `README.md` para a configuração completa.
+Com Docker Desktop e Docker Compose v2:
 
 ```powershell
-composer install
 Copy-Item .env.example .env
-# Edite .env com um banco local descartável
-php artisan key:generate
-php artisan migrate
-php artisan serve
+docker compose up -d --build
+docker compose exec web php artisan key:generate
+docker compose exec web php artisan migrate --force
+docker compose exec web php artisan ponto:administrador
 ```
 
-O repositório entregue não continha `.env` e a migration de usuários insere dados de demonstração. Não use banco de produção nesta configuração.
+Abra `http://127.0.0.1:8001`. O `.env` é local e não deve ser commitado. O banco do Compose é descartável e usa um volume Docker local.
 
 ## Verificações
 
 - Para a suíte PHP existente: `vendor/bin/phpunit`.
-- Os testes presentes são exemplos e não demonstram que os fluxos do produto estão corretos.
-- Ao implementar uma regra nova, descreva o cenário manual ou automatizado que comprova o aceite e atualize a cobertura correspondente.
-- Não afirme que algo foi testado sem executar a verificação e observar o resultado.
+- Os exemplos de teste presentes não cobrem todas as regras do produto.
+- Não afirme que algo foi verificado sem executar a verificação e observar o resultado.
+- Ao implementar regra de negócio, registre como validar o aceite e atualize a cobertura apropriada quando houver solicitação de testes.
 
 ## Estrutura útil
 
-- `app/Http/Controllers/PontoEletronico/`: fluxos de login, ponto, painel e relatórios.
-- `app/Http/Middleware/`: checagens de sessão atuais.
-- `app/*.php`: modelos Eloquent.
-- `database/migrations/`: tabelas e dados iniciais.
-- `resources/views/pontoeletronico/`: telas Blade.
-- `routes/web.php`: rotas da aplicação.
-- `public/adminlte/`: assets de interface já incluídos.
+- `routes/web.php`: rotas das páginas atuais.
+- `app/Http/Controllers/PontoEletronico/`: login, dashboard, cadastro, registro e acompanhamento.
+- `app/Http/Middleware/`: autorização dos perfis.
+- `app/Console/Commands/CriarAdministrador.php`: criação interativa do primeiro administrador.
+- `app/Usuario.php`, `app/Ponto.php`, `app/ConfiguracaoSistema.php`: modelos.
+- `database/migrations/`: esquema, inclusive horários do intervalo e configuração do IP.
+- `resources/views/pontoeletronico/`: páginas Blade.
+- `public/css/ponto.css`: estilos das telas atuais.
 
 ## Git e entrega
 
-Esta cópia foi recebida sem diretório `.git`; confirme o repositório e a branch antes de preparar commits. Quando aplicável, siga o padrão existente; se não houver padrão, use Conventional Commits em português, por exemplo `docs: documenta regras e fluxos do ponto`.
+- Confira `git status` e a branch antes de preparar um commit.
+- Não inclua `.env`, arquivos de credenciais nem dados reais.
+- Use Conventional Commits em pt-BR, por exemplo `feat(ponto): implementa painel da jornada`.

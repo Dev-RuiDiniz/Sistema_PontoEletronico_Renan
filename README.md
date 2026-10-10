@@ -1,79 +1,64 @@
-# iLAB4 Ponto Eletrônico
+# Sistema de Ponto Eletrônico
 
-Sistema web de registro de ponto para equipes pequenas. O projeto já contém uma aplicação Laravel com telas para funcionários e um painel de acompanhamento. Esta documentação descreve o código encontrado no repositório e separa o que ainda precisa ser validado antes de uso real.
+Aplicação web para registro simples da jornada de trabalho. O sistema tem cinco endereços principais: página inicial, login, cadastro de funcionários, painel do funcionário e painel administrativo.
 
-> **Estado atual:** protótipo legado. O primeiro produto será um relógio de ponto simples. O código contém telas antigas de ajustes e relatórios, mas elas ficam fora do MVP até serem solicitadas e revisadas. Há lacunas de segurança; não coloque em produção antes de concluir os itens prioritários do [roadmap](ROADMAP.md).
+## O que já está implementado
 
-## O que o sistema pretende resolver
+- `/`: apresentação do sistema e acesso ao login.
+- `/login`: entrada única com CPF e senha. O perfil da conta leva o usuário ao painel correspondente.
+- `/cadastro`: cadastro de funcionários, disponível somente para administradores.
+- `/dashboard`: registro de entrada, início do intervalo, retorno e saída, sempre na ordem, mais histórico mensal pessoal.
+- `/admin`: acompanhamento mensal de todos os funcionários, filtro por funcionário, lista de acessos e configuração opcional do IP público autorizado.
+- Horários definidos pelo servidor no fuso `America/Sao_Paulo`.
+- Senhas novas armazenadas com hash bcrypt; senhas SHA-1 antigas são atualizadas para bcrypt após um login válido.
 
-- O funcionário registra quatro marcações: entrada, início do intervalo, retorno do intervalo e saída.
-- O funcionário consulta o próprio histórico.
-- O administrador cadastra e desativa funcionários.
-- Opcionalmente, o administrador restringe as marcações ao IP público fixo do Wi-Fi autorizado (um endereço nesta primeira versão).
+O fluxo de ponto cria uma jornada por funcionário e data. Jornadas que atravessam a meia-noite e correções de marcação ainda não estão definidas. A restrição por IP começa desligada; o administrador precisa informar o endereço público fixo da empresa para ativá-la. Se o servidor estiver atrás de proxy, configure os proxies confiáveis antes de usar essa restrição.
 
-O fluxo assume uma marcação de cada tipo, nesta ordem: entrada → início do intervalo → retorno → saída. A restrição identifica a conexão de saída da empresa para a internet, não o nome da rede Wi-Fi. O IP fixo foi confirmado; o endereço numérico ainda precisa ser fornecido para configuração. Login e consulta de histórico podem continuar funcionando fora da rede; a restrição proposta se aplica ao ato de registrar o ponto.
+## Executar localmente com Docker
 
-O detalhamento está no [PRD](PRD.md); o caminho das telas e decisões está no [fluxograma](FLUXOGRAMA.md). As funções antigas de justificativa e relatório estão listadas como etapas futuras no [roadmap](ROADMAP.md).
+Pré-requisitos: Docker Desktop em execução e Docker Compose v2.
 
-## Perfis
+Na primeira inicialização:
 
-- **Funcionário:** registra os quatro horários e consulta seus próprios registros.
-- **Administrador:** mantém as contas dos funcionários e configura a restrição de IP.
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+docker compose exec web php artisan key:generate
+docker compose exec web php artisan migrate --force
+```
 
-Esses são os perfis desejados. No código atual, a autorização precisa ser corrigida: algumas rotas de gestão só verificam se existe uma sessão de painel e não confirmam que a conta é administradora.
+Crie a primeira conta administrativa pelo comando interativo. Ele solicita nome, CPF, e-mail e senha sem gravar a senha em comandos ou no repositório:
 
-## Tecnologias encontradas
+```powershell
+docker compose exec web php artisan ponto:administrador
+```
 
-- PHP e Laravel 7 (requisito declarado no `composer.json`).
-- MySQL como banco configurado no `.env.example`.
-- Blade nas telas e assets AdminLTE incluídos em `public/adminlte`.
-- PHPUnit 8 no conjunto de desenvolvimento; os testes existentes são apenas exemplos e não cobrem as regras de ponto.
+Abra [http://127.0.0.1:8001](http://127.0.0.1:8001) e entre em `/login` com a conta criada. No painel administrativo, cadastre um funcionário para testar o outro perfil. O Compose mantém o banco em volume local; para parar os serviços, execute `docker compose down`.
 
-## Como iniciar localmente
+Para o desenvolvimento sem Docker, instale as dependências com `composer install`, copie `.env.example` para `.env`, configure um MySQL local descartável, execute `php artisan key:generate`, `php artisan migrate` e `php artisan ponto:administrador`, e inicie com `php artisan serve`.
 
-Pré-requisitos: PHP compatível com `composer.json`, Composer e MySQL. Confira também as extensões PHP exigidas pelo Laravel/Composer se a instalação apontar alguma ausente.
+## Como funciona o registro
 
-1. Instale as dependências:
+1. O funcionário entra com CPF e senha.
+2. O painel mostra a próxima marcação disponível.
+3. O sistema valida a ordem e registra a hora do servidor: entrada → intervalo → retorno → saída.
+4. O histórico mensal mostra somente os registros da própria conta.
+5. O administrador consulta os registros da equipe, cadastra funcionários e, se necessário, restringe novas marcações ao IP público fixo cadastrado.
 
-   ```powershell
-   composer install
-   ```
+Quando a restrição por IP está ligada, uma marcação de fora do endereço autorizado é recusada. Login e consulta do histórico continuam acessíveis. O IP identifica a conexão pública da empresa, não a identidade física da pessoa.
 
-2. Crie seu arquivo local de ambiente e ajuste a conexão MySQL. Não compartilhe nem versione `.env`:
+## Documentação
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+- [PRD.md](PRD.md): regras, escopo, segurança e pendências do produto.
+- [AGENTS.md](AGENTS.md): instruções de execução e contribuição.
+- [ROADMAP.md](ROADMAP.md): concluído e próximos passos.
+- [FLUXOGRAMA.md](FLUXOGRAMA.md): navegação e registro da jornada.
+- [ACESSOS.md](ACESSOS.md): inventário de ambientes e credenciais sem segredos.
 
-   Preencha `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` com valores locais.
+## Limites desta versão
 
-3. Gere a chave da aplicação e crie as tabelas:
-
-   ```powershell
-   php artisan key:generate
-   php artisan migrate
-   ```
-
-4. Inicie o servidor de desenvolvimento:
-
-   ```powershell
-   php artisan serve
-   ```
-
-   Abra `http://127.0.0.1:8000`. O acesso ao painel começa em `/painel`.
-
-**Atenção:** as contas de demonstração foram removidas da migration para não publicar dados pessoais nem senhas fixas. Uma instalação nova não cria usuários automaticamente; o processo seguro de criação do primeiro administrador ainda precisa ser implementado antes de usar o sistema. Bancos que já tenham sido instalados anteriormente podem manter as contas antigas; troque/remova essas credenciais antes de conectar esse banco a qualquer ambiente compartilhado.
-
-Os comandos acima descrevem a configuração pretendida, não uma validação de que o projeto foi instalado ou executado neste ambiente.
-
-## Documentos do projeto
-
-- [PRD.md](PRD.md): objetivo, escopo, regras observadas e decisões que ainda precisam de resposta.
-- [AGENTS.md](AGENTS.md): instruções para contribuir e executar o projeto.
-- [ROADMAP.md](ROADMAP.md): sequência de trabalho para levar o protótipo a uma versão confiável.
-- [FLUXOGRAMA.md](FLUXOGRAMA.md): visão visual dos fluxos do funcionário e do painel.
-- [ACESSOS.md](ACESSOS.md): inventário seguro de acessos; não contém senhas reais.
-
-## Demonstração e licença
-
-O README anterior apontava a demonstração `https://pontoeletronico.ilab4.me` e licença MIT. O endereço não foi verificado nesta análise; confirme sua disponibilidade e a titularidade da licença antes de divulgar ou reutilizar.
+- Não há recuperação de senha nem fluxo de correção de ponto.
+- Não há jornada noturna que atravesse a meia-noite.
+- O endereço numérico do IP fixo precisa ser fornecido pela empresa antes de ligar a restrição.
+- Em hospedagem com proxy reverso, é necessário configurar os endereços de proxy confiáveis para que o servidor identifique corretamente o IP de origem sem confiar em cabeçalhos enviados pelo visitante.
+- Use dados fictícios em desenvolvimento. Não conecte o banco local a dados de produção.

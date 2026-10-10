@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Request;
-use Session;
+use App\Usuario;
+use Illuminate\Support\Facades\Session;
 
 class AutorizacaoMiddleware
 {
@@ -18,15 +18,18 @@ class AutorizacaoMiddleware
     public function handle($request, Closure $next)
     {
         
-        $usuario_logado = Session::get('login.ponto.usuario_id');
-        if(!isset($usuario_logado) OR $usuario_logado == ''){
-            
-            $url_base = getenv('APP_URL');
-            
-            echo("<script>window.location.replace(\"$url_base\");</script>");
-            
+        $usuario = Usuario::find(Session::get('login.ponto.usuario_id'));
+
+        if (!$usuario || $usuario->ativo != 1) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect('/login');
         }
-        
+
+        if ($usuario->admin == 1) {
+            return redirect('/admin');
+        }
+
         return $next($request);
     }
 }

@@ -1,164 +1,61 @@
 <?php namespace App\Http\Controllers\PontoEletronico;
 
-
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-
-use Request;
-use Session;
 use App\Usuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
-
-class UsuarioController extends PontoEletronicoController {
-    
-    public function __construct()
+class UsuarioController extends Controller
+{
+    public function novo()
     {
-        $this->middleware('authPainelMiddleware');
-        
+        return view('pontoeletronico.cadastro');
     }
-    
-    public function index(){
-        
-        $usuarios = Usuario::orderBy('nome', 'ASC')->get();
-        return view('pontoeletronico/usuario/index')->with('usuarios', $usuarios);
-            
-    }
-    
-    
-    public function novo(){
-        
-        return view('pontoeletronico/usuario/data');
-            
-    }
-    
-    public function editar($id){
-        
-        $usuario = Usuario::find($id);
-        return view('pontoeletronico/usuario/data')->with('u', $usuario);
-            
-    } 
-    
-    public function salvar(){
-        
-        if(Request::input('id') AND Request::input('id') > 0){
-            $usuario = Usuario::find(Request::input('id'));
-        } else {
-            $usuario = new Usuario(); 
-        }
-        
-        $senha = Request::input('senha');
-        if(!empty($senha)):
-            $usuario->senha = hash('sha1', $senha);
-        endif;
-        
-        $cpf_banco = Request::input('cpf_banco');
-        $email_banco = Request::input('email_banco');
-        
-        $email = Request::input('email');
-        $cpf = Request::input('cpf');
-        
-        $cpf_banco = str_replace(".", "", $cpf_banco);
-        $cpf_banco = str_replace("-", "", $cpf_banco);
-        
-        $cpf = str_replace(".", "", $cpf);
-        $cpf = str_replace("-", "", $cpf);
-        
-        if(NULL !== Request::input('ativo')):
-            $ativo = 1;
-        else:
-            $ativo = 0;
-        endif;
-        
-        if($email_banco != $email):
-            if($this->_verifica_email($email)):
-                Session::put('status.msg', 'Esse email já está existe em nosso cadastro!');
-                return redirect(getenv('APP_URL').'/painel/usuarios');
-                die();
-            endif;
-        endif;
-        
-        if($cpf_banco != $cpf):
-            if($this->_verifica_cpf($cpf)):
-                Session::put('status.msg', 'Esse CPF já está existe em nosso cadastro!');
-                return redirect(getenv('APP_URL').'/painel/usuarios');
-                die();
-            endif;
-        endif;
-      
-        $usuario->nome = Request::input('nome');
-        $usuario->email = Request::input('email');
-        $usuario->cpf = $cpf;
-        $usuario->cargo = Request::input('cargo');
-        $usuario->local = Request::input('local');
-        $usuario->ativo = $ativo;
 
-        $error = 1;
-        if($usuario->save()){
-            
-            Session::put('status.msg', 'Colaborador salvo com sucesso!');
-            return redirect(getenv('APP_URL').'/painel/usuarios');
-            
-        } else {
-            
-            return view('pontoeletronico/usuario/data');
-            
-        }
-        
-    }    
+    public function salvarNovo(Request $request)
+    {
+        $cpfInformado = $request->input('cpf');
+        $request->merge(['cpf' => is_string($cpfInformado) ? preg_replace('/\D+/', '', $cpfInformado) : '']);
 
-    public function _verifica_email($email){
-        
-        $usuario = Usuario::where(['email' => $email])->get();
-        
-        if(count($usuario)){
-            return true;
-        } else {
-            return false;
-        }
-            
-    }
-    
-    public function _verifica_cpf($cpf){
-        
-        $cpf = str_replace(".", "", $cpf);
-        $cpf = str_replace("-", "", $cpf);
-        $cpf = str_replace("/", "", $cpf);
-        
-        $usuario = Usuario::where(['cpf' => $cpf])->get();
-        
-        if(count($usuario)){
-            return true;
-        } else {
-            return false;
-        }
-            
-    }
-    
-    public function desabilitar($id){
-        
-        $usuario = Usuario::find($id);
-        $usuario->ativo = 0;
-        $usuario->save();
+        $dados = $request->validate([
+            'nome' => 'required|string|max:100',
+            'cpf' => 'required|digits:11|unique:usuario,cpf',
+            'email' => 'required|email|max:100|unique:usuario,email',
+            'cargo' => 'nullable|string|max:100',
+            'local' => 'nullable|string|max:100',
+            'senha' => 'required|string|min:8|confirmed',
+        ], [
+            'nome.required' => 'Informe o nome completo.',
+            'nome.string' => 'O nome informado é inválido.',
+            'nome.max' => 'O nome deve ter até 100 caracteres.',
+            'cpf.required' => 'Informe o CPF.',
+            'cpf.digits' => 'Informe um CPF com 11 números.',
+            'cpf.unique' => 'Já existe um cadastro com este CPF.',
+            'email.required' => 'Informe o e-mail.',
+            'email.email' => 'Informe um endereço de e-mail válido.',
+            'email.max' => 'O e-mail deve ter até 100 caracteres.',
+            'email.unique' => 'Já existe um cadastro com este e-mail.',
+            'cargo.string' => 'O cargo informado é inválido.',
+            'cargo.max' => 'O cargo deve ter até 100 caracteres.',
+            'local.string' => 'O local informado é inválido.',
+            'local.max' => 'O local deve ter até 100 caracteres.',
+            'senha.required' => 'Defina uma senha inicial.',
+            'senha.string' => 'A senha informada é inválida.',
+            'senha.confirmed' => 'A confirmação da senha não confere.',
+            'senha.min' => 'A senha deve ter pelo menos 8 caracteres.',
+        ]);
 
-        $msg = "Usuário desabilitado com sucesso!";
-        Session::put('status.msg', $msg);
-        
-        return redirect(getenv('APP_URL').'/painel/usuarios');
-            
-    }
-    
-    public function habilitar($id){
-        
-        $usuario = Usuario::find($id);
+        $usuario = new Usuario();
+        $usuario->nome = $dados['nome'];
+        $usuario->cpf = $dados['cpf'];
+        $usuario->email = $dados['email'];
+        $usuario->cargo = $dados['cargo'] ?? null;
+        $usuario->local = $dados['local'] ?? null;
+        $usuario->senha = Hash::make($dados['senha']);
+        $usuario->admin = 0;
         $usuario->ativo = 1;
         $usuario->save();
 
-        $msg = "Usuário ativado com sucesso!";
-        Session::put('status.msg', $msg);
-        
-        return redirect(getenv('APP_URL').'/painel/usuarios');
-            
+        return redirect('/admin')->with('sucesso', 'Funcionário cadastrado.');
     }
-    
 }
